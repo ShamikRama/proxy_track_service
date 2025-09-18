@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/shamil/proxy_track_service-1/pkg/models"
+	"github.com/shamil/proxy_track_service-1/internal/models"
 )
 
 type CacheRepository interface {

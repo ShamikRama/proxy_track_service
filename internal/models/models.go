@@ -21,15 +21,15 @@ type TrackData struct {
 
 type Event struct {
 	Status string `json:"status"`
-	Date   string `json:"date"` // RFC3339
+	Date   string `json:"date"`
 }
 
 const (
-	StatusCreated   = "Created"   // Посылка создана
-	StatusInTransit = "Transit"   // В пути
-	StatusInCustoms = "Customs"   // На таможне
-	StatusDelivered = "Delivered" // Доставлена
-	StatusException = "Exception" // Исключение/проблема
-	StatusReturned  = "Returned"  // Возвращена
-	StatusUnknown   = "Unknown"   // Неизвестный статус
+	StatusCreated   = "Created"
+	StatusInTransit = "Transit"
+	StatusInCustoms = "Customs"
+	StatusDelivered = "Delivered"
+	StatusException = "Exception"
+	StatusReturned  = "Returned"
+	StatusUnknown   = "Unknown"
 )

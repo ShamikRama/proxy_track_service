@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/shamil/proxy_track_service-1/pkg/models"
+	"github.com/shamil/proxy_track_service-1/internal/models"
 )
 
 func ParseHTML(htmlContent string, trackCodes []string) (map[string]*models.TrackData, error) {

@@ -10,8 +10,9 @@ import (
 
 	"github.com/shamil/proxy_track_service-1/internal/client"
 	"github.com/shamil/proxy_track_service-1/internal/config"
+	"github.com/shamil/proxy_track_service-1/internal/erors"
+	"github.com/shamil/proxy_track_service-1/internal/models"
 	"github.com/shamil/proxy_track_service-1/internal/repository"
-	"github.com/shamil/proxy_track_service-1/pkg/models"
 )
 
 type Batcher struct {
@@ -152,7 +153,6 @@ func (b *Batcher) Stop() error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	// Останавливаем таймер
 	if !b.batchTimer.Stop() {
 		select {
 		case <-b.batchTimer.C:
@@ -271,11 +271,18 @@ func (b *Batcher) processBatch(items []batchItem) {
 
 	results, err := b.client.TrackPackagesBatch(context.Background(), trackCodes)
 	if err != nil {
-		log.Printf("Batch API error: %v", err)
+		log.Printf("batcher.processBatch.APIError: %v", err)
+
+		var errorMsg string
+		if erors.IsClientError(err) {
+			errorMsg = err.Error()
+		} else {
+			errorMsg = "tracking service temporarily unavailable"
+		}
 
 		errorResponse := models.TrackResponse{
 			Status: false,
-			Error:  "external API unavailable: " + err.Error(),
+			Error:  errorMsg,
 		}
 
 		for _, item := range items {
@@ -329,12 +336,4 @@ func (b *Batcher) processBatch(items []batchItem) {
 	}
 
 	log.Printf("Batch processing completed: %d/%d successful", successful, len(items))
-}
-
-func (b *Batcher) safeSendResponse(ch chan<- models.TrackResponse, response models.TrackResponse) {
-	select {
-	case ch <- response:
-	case <-time.After(100 * time.Millisecond):
-		log.Printf("Warning: response channel timeout")
-	}
 }

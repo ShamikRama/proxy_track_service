@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	"github.com/shamil/proxy_track_service-1/pkg/models"
+	"github.com/shamil/proxy_track_service-1/internal/models"
 )
 
 type ExternalAPIClient interface {

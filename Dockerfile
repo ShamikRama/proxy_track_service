@@ -22,8 +22,6 @@ WORKDIR /app
 
 COPY --from=builder /app/main .
 
-COPY --from=builder /app/env.example .
-
 RUN chown -R appuser:appuser /app
 
 USER appuser

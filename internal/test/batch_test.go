@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/shamil/proxy_track_service-1/internal/batcher"
 	"github.com/shamil/proxy_track_service-1/internal/config"
 	"github.com/shamil/proxy_track_service-1/internal/models"
 	"github.com/shamil/proxy_track_service-1/internal/repository"
@@ -144,7 +145,7 @@ func (m *MockCacheRepository) Close() error {
 // TestBatcherBatchSize - тест накопления 50 трек-кодов
 func TestBatcherBatchSize(t *testing.T) {
 	config := config.BatcherConfig{
-		BatchSize:    5, // Используем 5 вместо 50 для быстрого тестирования
+		BatchSize:    5,
 		BatchTimeout: 10 * time.Second,
 		Workers:      1,
 	}
@@ -152,7 +153,7 @@ func TestBatcherBatchSize(t *testing.T) {
 	mockClient := NewMockExternalAPIClient()
 	mockCache := NewMockCacheRepository()
 
-	batcher := NewBatcher(config, mockCache, mockClient)
+	batcher := batcher.NewBatcher(config, mockCache, mockClient)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -228,7 +229,7 @@ func TestBatcherTimeout(t *testing.T) {
 	mockClient := NewMockExternalAPIClient()
 	mockCache := NewMockCacheRepository()
 
-	batcher := NewBatcher(config, mockCache, mockClient)
+	batcher := batcher.NewBatcher(config, mockCache, mockClient)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -290,7 +291,7 @@ func TestBatcherMultipleBatches(t *testing.T) {
 	mockClient := NewMockExternalAPIClient()
 	mockCache := NewMockCacheRepository()
 
-	batcher := NewBatcher(config, mockCache, mockClient)
+	batcher := batcher.NewBatcher(config, mockCache, mockClient)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -353,7 +354,7 @@ func TestBatcherConcurrency(t *testing.T) {
 	mockClient := NewMockExternalAPIClient()
 	mockCache := NewMockCacheRepository()
 
-	batcher := NewBatcher(config, mockCache, mockClient)
+	batcher := batcher.NewBatcher(config, mockCache, mockClient)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

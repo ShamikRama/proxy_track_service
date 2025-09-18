@@ -3,6 +3,7 @@ package fourpx
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -12,7 +13,8 @@ import (
 	"github.com/chromedp/cdproto/dom"
 	"github.com/chromedp/chromedp"
 	"github.com/shamil/proxy_track_service-1/internal/client"
-	"github.com/shamil/proxy_track_service-1/pkg/models"
+	"github.com/shamil/proxy_track_service-1/internal/erors"
+	"github.com/shamil/proxy_track_service-1/internal/models"
 )
 
 type FourPXClient struct {
@@ -39,6 +41,11 @@ func NewFourPXClient(baseURL string, hashpattern string, timeout time.Duration) 
 }
 
 func (c *FourPXClient) TrackPackage(ctx context.Context, trackCode string) (*models.TrackData, error) {
+	if !c.isValidTrackCode(trackCode) {
+		log.Printf("client.TrackPackage.InvalidCode: %s", trackCode)
+		return nil, erors.NewClientError("invalid tracking code format", erors.ErrInvalidTrackCode)
+	}
+
 	results, err := c.TrackPackagesBatch(ctx, []string{trackCode})
 	if err != nil {
 		return nil, err
@@ -48,20 +55,28 @@ func (c *FourPXClient) TrackPackage(ctx context.Context, trackCode string) (*mod
 		return data, nil
 	}
 
-	return nil, fmt.Errorf("tracking data not found for code: %s", trackCode)
+	log.Printf("client.TrackPackage.NotFound: %s", trackCode)
+	return nil, erors.NewClientError("tracking code not found", erors.ErrTrackCodeNotFound)
 }
 
 func (c *FourPXClient) TrackPackagesBatch(ctx context.Context, trackCodes []string) (map[string]*models.TrackData, error) {
 	if len(trackCodes) == 0 {
-		return nil, fmt.Errorf("no track codes provided")
+		return nil, erors.NewInternalError("BATCH_EMPTY", "no track codes provided", nil)
 	}
 
 	htmlContent, err := c.scrapeWithChromedp(ctx, trackCodes)
 	if err != nil {
-		return nil, fmt.Errorf("chromedp scraping failed: %w", err)
+		log.Printf("client.TrackPackagesBatch.ScrapingError: %v", err)
+		return nil, erors.NewClientError("tracking service temporarily unavailable", erors.ErrServiceUnavailable)
 	}
 
-	return ParseHTML(htmlContent, trackCodes)
+	results, err := ParseHTML(htmlContent, trackCodes)
+	if err != nil {
+		log.Printf("client.TrackPackagesBatch.ParsingError: %v", err)
+		return nil, erors.NewClientError("tracking service temporarily unavailable", erors.ErrServiceUnavailable)
+	}
+
+	return results, nil
 }
 
 func (c *FourPXClient) scrapeWithChromedp(ctx context.Context, trackCodes []string) (string, error) {
@@ -70,7 +85,8 @@ func (c *FourPXClient) scrapeWithChromedp(ctx context.Context, trackCodes []stri
 
 	browserPath, err := findBrowserPath()
 	if err != nil {
-		return "", fmt.Errorf("browser not found: %w", err)
+		log.Printf("client.scrapeWithChromedp.BrowserNotFound: %v", err)
+		return "", erors.NewInternalError("BROWSER_NOT_FOUND", "browser not found", err)
 	}
 
 	allocatorOpts := append(
@@ -171,6 +187,26 @@ func findBrowserPath() (string, error) {
 	}
 
 	return "", fmt.Errorf("no browser found. Please install Chrome or Chromium")
+}
+
+func (c *FourPXClient) isValidTrackCode(trackCode string) bool {
+	if len(trackCode) < 8 || len(trackCode) > 20 {
+		return false
+	}
+
+	hasLetter := false
+	hasDigit := false
+
+	for _, char := range trackCode {
+		if (char >= 'A' && char <= 'Z') || (char >= 'a' && char <= 'z') {
+			hasLetter = true
+		}
+		if char >= '0' && char <= '9' {
+			hasDigit = true
+		}
+	}
+
+	return hasLetter && hasDigit
 }
 
 func (c *FourPXClient) Health(ctx context.Context) error {

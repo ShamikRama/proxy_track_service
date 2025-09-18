@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/shamil/proxy_track_service-1/internal/models"
 	"github.com/shamil/proxy_track_service-1/internal/service"
-	"github.com/shamil/proxy_track_service-1/pkg/models"
 )
 
 type TrackHandler struct {
@@ -38,6 +38,11 @@ func (h *TrackHandler) GetTrackStatus(w http.ResponseWriter, r *http.Request) {
 
 	select {
 	case response := <-responseChan:
+		if !response.Status && response.Error != "" {
+			statusCode := h.getStatusCodeFromError(response.Error)
+			h.writeErrorResponse(w, statusCode, response.Error)
+			return
+		}
 		h.writeJSONResponse(w, http.StatusOK, response)
 	case <-r.Context().Done():
 		h.writeErrorResponse(w, http.StatusRequestTimeout, "request cancelled by client")
@@ -64,6 +69,23 @@ func (h *TrackHandler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.writeJSONResponse(w, http.StatusOK, response)
+}
+
+func (h *TrackHandler) getStatusCodeFromError(errorMsg string) int {
+	switch {
+	case strings.Contains(errorMsg, "tracking code not found"):
+		return http.StatusNotFound
+	case strings.Contains(errorMsg, "invalid tracking code format"):
+		return http.StatusBadRequest
+	case strings.Contains(errorMsg, "tracking service temporarily unavailable"):
+		return http.StatusServiceUnavailable
+	case strings.Contains(errorMsg, "request timeout"):
+		return http.StatusRequestTimeout
+	case strings.Contains(errorMsg, "too many requests"):
+		return http.StatusTooManyRequests
+	default:
+		return http.StatusInternalServerError
+	}
 }
 
 func (h *TrackHandler) writeJSONResponse(w http.ResponseWriter, statusCode int, data interface{}) {
