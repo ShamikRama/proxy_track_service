@@ -8,8 +8,8 @@ import (
 
 	"github.com/shamil/proxy_track_service-1/internal/batcher"
 	"github.com/shamil/proxy_track_service-1/internal/client"
+	"github.com/shamil/proxy_track_service-1/internal/models"
 	"github.com/shamil/proxy_track_service-1/internal/repository"
-	"github.com/shamil/proxy_track_service-1/pkg/models"
 )
 
 type trackingService struct {

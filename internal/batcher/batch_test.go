@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/shamil/proxy_track_service-1/internal/config"
+	"github.com/shamil/proxy_track_service-1/internal/models"
 	"github.com/shamil/proxy_track_service-1/internal/repository"
-	"github.com/shamil/proxy_track_service-1/pkg/models"
 )
 
 type MockExternalAPIClient struct {
